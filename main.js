@@ -316,7 +316,7 @@
     const btn = form.querySelector('button[type="submit"]');
     const params = new URLSearchParams(location.search);
     const source = ['utm_source', 'utm_medium', 'utm_campaign'].map(k => params.get(k)).filter(Boolean).join(' / ')
-      || (document.referrer ? new URL(document.referrer).hostname : 'כניסה ישירה');
+      || (document.referrer && new URL(document.referrer).hostname !== location.hostname ? new URL(document.referrer).hostname : 'כניסה ישירה');
     form.addEventListener('submit', async e => {
       e.preventDefault();
       if (btn.disabled) return;
