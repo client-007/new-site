@@ -309,12 +309,17 @@
     });
   });
 
-  /* --- Contact form (no backend yet: validates and shows a confirmation) --- */
+  /* --- Contact form: sends leads by email via Web3Forms --- */
   const form = document.querySelector('.form');
   if (form) {
     const msg = form.querySelector('.form__msg');
-    form.addEventListener('submit', e => {
+    const btn = form.querySelector('button[type="submit"]');
+    const params = new URLSearchParams(location.search);
+    const source = ['utm_source', 'utm_medium', 'utm_campaign'].map(k => params.get(k)).filter(Boolean).join(' / ')
+      || (document.referrer ? new URL(document.referrer).hostname : 'כניסה ישירה');
+    form.addEventListener('submit', async e => {
       e.preventDefault();
+      if (btn.disabled) return;
       const name = form.elements.name, phone = form.elements.phone, ok = form.elements.privacy;
       const phoneOk = /^0\d{1,2}-?\d{7}$/.test(phone.value.replace(/[\s()]/g, ''));
       name.setAttribute('aria-invalid', !name.value.trim());
@@ -323,9 +328,35 @@
       if (!name.value.trim()) { msg.textContent = 'נא למלא שם מלא'; msg.classList.add('err'); name.focus(); return; }
       if (!phoneOk) { msg.textContent = 'נא למלא מספר טלפון תקין'; msg.classList.add('err'); phone.focus(); return; }
       if (!ok.checked) { msg.textContent = 'נא לאשר את מדיניות הפרטיות'; msg.classList.add('err'); ok.focus(); return; }
-      msg.textContent = 'תודה! הפרטים התקבלו ונחזור אליכם בהקדם.';
-      msg.classList.add('ok');
-      form.reset();
+      if (form.elements.botcheck.checked) return;
+      btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+      msg.textContent = 'שולח...';
+      try {
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            access_key: 'f38f1627-8340-4dba-a991-b2c5162aa495',
+            subject: `ליד חדש מהאתר: ${name.value.trim()}`,
+            from_name: 'אתר אהרון פרקש',
+            'שם מלא': name.value.trim(),
+            'טלפון': phone.value.trim(),
+            'מקור': source,
+            'אישור מדיניות פרטיות': 'כן',
+            botcheck: false
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) throw new Error(data.message || res.status);
+        msg.textContent = 'תודה! הפרטים התקבלו ונחזור אליכם בהקדם.';
+        msg.classList.add('ok');
+        form.reset();
+      } catch (err) {
+        msg.textContent = 'משהו השתבש בשליחה. אפשר לנסות שוב או לכתוב לנו בוואטסאפ.';
+        msg.classList.add('err');
+      } finally {
+        btn.disabled = false; btn.removeAttribute('aria-busy');
+      }
     });
   }
 }
