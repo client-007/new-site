@@ -281,9 +281,13 @@ h1,h2,h3{margin:0;font-weight:400}
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width:1180px){
-  .hero__text{padding:110px 40px 0 16px}
-  .hero__visual{height:600px}
+  .hero__grid{align-items:stretch;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+  .hero__text{padding:110px 40px 90px 16px}
+  .hero__visual{height:auto;min-height:600px}
   .hero__photo{width:480px}
+  .benefits{padding:14px 20px;gap:10px 16px;justify-content:space-evenly}
+  .benefits li{font-size:18px}
+  .benefits img{width:38px}
   .traffic{width:270px}
   .fit__cards{gap:40px}
   .story__text{padding:48px 40px 32px 24px}
