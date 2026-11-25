@@ -341,7 +341,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
-          access_key: 'f38f1627-8340-4dba-a991-b2c5162aa495',
+          access_key: 'da847c0e-ac10-472b-bf0a-7127cfafab0a',
           subject: `ליד חדש מהאתר: ${lead.name}`,
           from_name: 'אתר אהרון פרקש',
           'שם מלא': lead.name,
