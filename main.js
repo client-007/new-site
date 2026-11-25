@@ -309,7 +309,8 @@
     });
   });
 
-  /* --- Contact form: sends leads by email via Web3Forms --- */
+  /* --- Contact form: each lead goes to Google Sheets (new row) and by email (Web3Forms) --- */
+  const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxztCPUIPgEy2nqqYNESPRKPWsPlyZePS5BDNgdWE2SSBVIWCnYXZ6G4xbOoOJyF-Ka/exec';
   const form = document.querySelector('.form');
   if (form) {
     const msg = form.querySelector('.form__msg');
@@ -331,23 +332,30 @@
       if (form.elements.botcheck.checked) return;
       btn.disabled = true; btn.setAttribute('aria-busy', 'true');
       msg.textContent = 'שולח...';
+      const lead = { name: name.value.trim(), phone: phone.value.trim(), source };
+      // Google Sheets (Apps Script): text/plain avoids a CORS preflight; response is opaque
+      const toSheet = fetch(SHEETS_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(lead)
+      }).then(() => true, () => false);
+      // Email (Web3Forms)
+      const toEmail = fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: 'f38f1627-8340-4dba-a991-b2c5162aa495',
+          subject: `ליד חדש מהאתר: ${lead.name}`,
+          from_name: 'אתר אהרון פרקש',
+          'שם מלא': lead.name,
+          'טלפון': lead.phone,
+          'מקור': lead.source,
+          botcheck: false
+        })
+      }).then(r => r.json().then(d => r.ok && d.success, () => false), () => false);
       try {
-        const res = await fetch('https://api.web3forms.com/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({
-            access_key: 'f38f1627-8340-4dba-a991-b2c5162aa495',
-            subject: `ליד חדש מהאתר: ${name.value.trim()}`,
-            from_name: 'אתר אהרון פרקש',
-            'שם מלא': name.value.trim(),
-            'טלפון': phone.value.trim(),
-            'מקור': source,
-            'אישור מדיניות פרטיות': 'כן',
-            botcheck: false
-          })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data.success) throw new Error(data.message || res.status);
+        const [sheetOk, emailOk] = await Promise.all([toSheet, toEmail]);
+        if (!sheetOk && !emailOk) throw new Error('send failed');
         msg.textContent = 'תודה! הפרטים התקבלו ונחזור אליכם בהקדם.';
         msg.classList.add('ok');
         form.reset();
