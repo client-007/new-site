@@ -315,9 +315,6 @@
   if (form) {
     const msg = form.querySelector('.form__msg');
     const btn = form.querySelector('button[type="submit"]');
-    const params = new URLSearchParams(location.search);
-    const source = ['utm_source', 'utm_medium', 'utm_campaign'].map(k => params.get(k)).filter(Boolean).join(' / ')
-      || (document.referrer && new URL(document.referrer).hostname !== location.hostname ? new URL(document.referrer).hostname : 'כניסה ישירה');
     form.addEventListener('submit', async e => {
       e.preventDefault();
       if (btn.disabled) return;
@@ -332,7 +329,7 @@
       if (form.elements.botcheck.checked) return;
       btn.disabled = true; btn.setAttribute('aria-busy', 'true');
       msg.textContent = 'שולח...';
-      const lead = { name: name.value.trim(), phone: phone.value.trim(), source };
+      const lead = { name: name.value.trim(), phone: phone.value.trim() };
       // Google Sheets (Apps Script): text/plain avoids a CORS preflight; response is opaque
       const toSheet = fetch(SHEETS_URL, {
         method: 'POST', mode: 'no-cors',
@@ -349,7 +346,6 @@
           from_name: 'אתר אהרון פרקש',
           'שם מלא': lead.name,
           'טלפון': lead.phone,
-          'מקור': lead.source,
           botcheck: false
         })
       }).then(r => r.json().then(d => r.ok && d.success, () => false), () => false);
